@@ -1,0 +1,15 @@
+{
+  "name": "libresign",
+  "version": "0.1.0",
+  "license": "MIT",
+  "scripts": {},
+  "private": true,
+  "dependencies": {},
+  "devDependencies": {
+    "@nx/js": "20.5.0",
+    "nx": "20.5.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}
