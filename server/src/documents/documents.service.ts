@@ -6,8 +6,8 @@ import { GetObjectCommand } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { v4 as uuidv4 } from 'uuid';
 import { ConfigService } from '@nestjs/config';
-import { Document } from './entities/document.entity';
-import { AuditLog } from './entities/audit-log.entity';
+import { Document, DocumentStatus } from './entities/document.entity';
+import { AuditLog, AuditLogAction } from './entities/audit-log.entity';
 import { CreateDocumentDto } from './dto/create-document.dto';
 import * as PDFLib from 'pdf-lib';
 import * as crypto from 'crypto';
@@ -15,6 +15,7 @@ import * as crypto from 'crypto';
 @Injectable()
 export class DocumentsService {
   private s3Client: S3;
+  private s3BucketName: string;
 
   constructor(
     @InjectRepository(Document)
@@ -23,11 +24,16 @@ export class DocumentsService {
     private auditLogRepository: Repository<AuditLog>,
     private configService: ConfigService,
   ) {
+    const region = this.configService.get<string>('AWS_REGION');
+    const accessKeyId = this.configService.get<string>('AWS_ACCESS_KEY_ID') || '';
+    const secretAccessKey = this.configService.get<string>('AWS_SECRET_ACCESS_KEY') || '';
+    this.s3BucketName = this.configService.get<string>('AWS_S3_BUCKET') || 'libresign';
+    
     this.s3Client = new S3({
-      region: this.configService.get('AWS_REGION'),
+      region,
       credentials: {
-        accessKeyId: this.configService.get('AWS_ACCESS_KEY_ID'),
-        secretAccessKey: this.configService.get('AWS_SECRET_ACCESS_KEY'),
+        accessKeyId,
+        secretAccessKey,
       },
     });
   }
@@ -40,24 +46,30 @@ export class DocumentsService {
     const s3Key = `documents/${userId}/${uuidv4()}`;
     
     await this.s3Client.putObject({
-      Bucket: this.configService.get('AWS_S3_BUCKET'),
+      Bucket: this.s3BucketName,
       Key: s3Key,
       Body: file.buffer,
       ContentType: file.mimetype,
     });
 
-    const document = this.documentsRepository.create({
-      title: createDocumentDto.title,
-      description: createDocumentDto.description,
-      s3Key,
-      status: 'draft',
-      ownerId: userId,
-    });
+    const document = new Document();
+    document.title = createDocumentDto.title;
+    if (createDocumentDto.description) {
+      document.description = createDocumentDto.description;
+    }
+    document.s3Key = s3Key;
+    document.status = DocumentStatus.DRAFT;
+    document.ownerId = userId;
 
     const savedDocument = await this.documentsRepository.save(document);
 
     // Create audit log
-    await this.createAuditLog(savedDocument.id, userId, 'upload', 'Document uploaded');
+    await this.createAuditLog(
+      savedDocument.id, 
+      userId, 
+      AuditLogAction.DOCUMENT_CREATED, 
+      'Document uploaded'
+    );
 
     return savedDocument;
   }
@@ -90,12 +102,17 @@ export class DocumentsService {
 
     // Delete from S3
     await this.s3Client.deleteObject({
-      Bucket: this.configService.get('AWS_S3_BUCKET'),
+      Bucket: this.s3BucketName,
       Key: document.s3Key,
     });
 
     // Create audit log
-    await this.createAuditLog(id, userId, 'delete', 'Document deleted');
+    await this.createAuditLog(
+      id, 
+      userId, 
+      AuditLogAction.DOCUMENT_DELETED, 
+      'Document deleted'
+    );
 
     return this.documentsRepository.remove(document);
   }
@@ -113,15 +130,14 @@ export class DocumentsService {
   async createAuditLog(
     documentId: string,
     userId: string,
-    action: string,
+    action: AuditLogAction,
     details: string,
   ) {
-    const auditLog = this.auditLogRepository.create({
-      documentId,
-      userId,
-      action,
-      details,
-    });
+    const auditLog = new AuditLog();
+    auditLog.documentId = documentId;
+    auditLog.userId = userId;
+    auditLog.action = action;
+    auditLog.details = { message: details };
 
     return this.auditLogRepository.save(auditLog);
   }
@@ -137,7 +153,7 @@ export class DocumentsService {
 
     // Generate a pre-signed URL for the S3 object
     const command = new GetObjectCommand({
-      Bucket: this.configService.get('AWS_S3_BUCKET'),
+      Bucket: this.s3BucketName,
       Key: document.s3Key,
     });
 
@@ -156,10 +172,14 @@ export class DocumentsService {
 
     // Get the document from S3
     const getObjectResponse = await this.s3Client.getObject({
-      Bucket: this.configService.get('AWS_S3_BUCKET'),
+      Bucket: this.s3BucketName,
       Key: document.s3Key,
     });
 
+    if (!getObjectResponse.Body) {
+      throw new Error('Failed to retrieve document body from S3');
+    }
+    
     const pdfBytes = await getObjectResponse.Body.transformToByteArray();
     
     // Load the PDF document
@@ -185,7 +205,7 @@ export class DocumentsService {
     
     // Upload the signed document to S3
     await this.s3Client.putObject({
-      Bucket: this.configService.get('AWS_S3_BUCKET'),
+      Bucket: this.s3BucketName,
       Key: signedS3Key,
       Body: modifiedPdfBytes,
       ContentType: 'application/pdf',
@@ -193,7 +213,7 @@ export class DocumentsService {
     
     // Update document in the database
     document.signedS3Key = signedS3Key;
-    document.status = 'completed';
+    document.status = DocumentStatus.COMPLETED;
     document.documentHash = crypto
       .createHash('sha256')
       .update(Buffer.from(modifiedPdfBytes))
@@ -205,8 +225,8 @@ export class DocumentsService {
     await this.createAuditLog(
       documentId,
       document.ownerId,
-      'sign',
-      `Document signed with signature ID ${signatureId}`,
+      AuditLogAction.DOCUMENT_SIGNED,
+      `Document signed with signature ID ${signatureId}`
     );
   }
 }

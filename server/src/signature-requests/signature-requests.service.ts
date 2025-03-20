@@ -40,15 +40,16 @@ export class SignatureRequestsService {
     );
 
     // Create signature request
-    const signatureRequest = this.signatureRequestRepository.create({
-      documentId: createSignatureRequestDto.documentId,
-      requesterId,
-      signerEmail: createSignatureRequestDto.signerEmail,
-      message: createSignatureRequestDto.message,
-      status: SignatureRequestStatus.PENDING,
-      // Set expiration date to 30 days from now
-      expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-    });
+    const signatureRequest = new SignatureRequest();
+    signatureRequest.documentId = createSignatureRequestDto.documentId;
+    signatureRequest.requesterId = requesterId;
+    signatureRequest.signerEmail = createSignatureRequestDto.signerEmail;
+    if (createSignatureRequestDto.message) {
+      signatureRequest.message = createSignatureRequestDto.message;
+    }
+    signatureRequest.status = SignatureRequestStatus.PENDING;
+    // Set expiration date to 30 days from now
+    signatureRequest.expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
     const savedRequest = await this.signatureRequestRepository.save(signatureRequest);
 
@@ -168,15 +169,14 @@ export class SignatureRequestsService {
     }
 
     // Create signature
-    const signature = this.signatureRepository.create({
-      signatureRequestId: id,
-      signerId: signatureRequest.signerId,
-      signatureData: signDocumentDto.signatureData,
-      signatureType: signDocumentDto.signatureType,
-      ipAddress: signDocumentDto.ipAddress || '0.0.0.0',
-      signatureHash: this.hashSignature(signDocumentDto.signatureData),
-      metadata: signDocumentDto.metadata || {},
-    });
+    const signature = new Signature();
+    signature.signatureRequestId = id;
+    signature.signerId = signatureRequest.signerId;
+    signature.signatureData = signDocumentDto.signatureData;
+    signature.signatureType = signDocumentDto.signatureType;
+    signature.ipAddress = signDocumentDto.ipAddress || '0.0.0.0';
+    signature.signatureHash = this.hashSignature(signDocumentDto.signatureData);
+    signature.metadata = signDocumentDto.metadata || {};
 
     await this.signatureRepository.save(signature);
 

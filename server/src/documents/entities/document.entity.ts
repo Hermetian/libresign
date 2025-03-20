@@ -23,7 +23,13 @@ export class Document {
   s3Key: string;
 
   @Column({ nullable: true })
+  signedS3Key: string;
+
+  @Column({ nullable: true })
   fileHash: string;
+
+  @Column({ nullable: true })
+  documentHash: string;
 
   @Column({
     type: 'enum',
