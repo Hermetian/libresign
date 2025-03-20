@@ -1,11 +1,20 @@
-import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn, UpdateDateColumn, ManyToOne, JoinColumn, OneToMany } from 'typeorm';
-import { User } from '../../users/entities/user.entity';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  CreateDateColumn,
+  UpdateDateColumn,
+  ManyToOne,
+  JoinColumn,
+  OneToMany
+} from 'typeorm';
 import { Document } from '../../documents/entities/document.entity';
+import { User } from '../../users/entities/user.entity';
 import { Signature } from './signature.entity';
 
 export enum SignatureRequestStatus {
   PENDING = 'pending',
-  SIGNED = 'signed',
+  COMPLETED = 'completed',
   DECLINED = 'declined',
   EXPIRED = 'expired',
 }
@@ -15,52 +24,52 @@ export class SignatureRequest {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
+  @Column({ type: 'uuid' })
+  documentId: string;
+
   @ManyToOne(() => Document, document => document.signatureRequests)
   @JoinColumn({ name: 'documentId' })
   document: Document;
 
-  @Column()
-  documentId: string;
+  @Column({ type: 'uuid' })
+  requesterId: string;
 
   @ManyToOne(() => User, user => user.signatureRequests)
   @JoinColumn({ name: 'requesterId' })
   requester: User;
 
-  @Column()
-  requesterId: string;
+  @Column({ type: 'uuid', nullable: true })
+  signerId: string;
 
   @ManyToOne(() => User, user => user.signingRequests, { nullable: true })
   @JoinColumn({ name: 'signerId' })
   signer: User;
 
-  @Column({ nullable: true })
-  signerId: string;
-
-  @Column()
+  @Column({ type: 'varchar', length: 255 })
   signerEmail: string;
 
-  @Column({ nullable: true })
+  @Column({ type: 'varchar', length: 500, nullable: true })
   message: string;
 
   @Column({
     type: 'enum',
     enum: SignatureRequestStatus,
-    default: SignatureRequestStatus.PENDING
+    default: SignatureRequestStatus.PENDING,
   })
   status: SignatureRequestStatus;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   signedAt: Date;
 
-  @Column({ nullable: true })
+  @Column({ type: 'timestamp', nullable: true })
   expiresAt: Date;
-
-  @OneToMany(() => Signature, signature => signature.signatureRequest)
-  signatures: Signature[];
 
   @CreateDateColumn()
   createdAt: Date;
 
   @UpdateDateColumn()
   updatedAt: Date;
-} 
+
+  @OneToMany(() => Signature, signature => signature.signatureRequest)
+  signatures: Signature[];
+}

@@ -6,6 +6,9 @@ import { AppService } from './app.service';
 import { databaseConfig } from './config/database.config';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
+import { DocumentsModule } from './documents/documents.module';
+import { SignatureRequestsModule } from './signature-requests/signature-requests.module';
+import { MailModule } from './mail/mail.module';
 
 @Module({
   imports: [
@@ -15,6 +18,9 @@ import { AuthModule } from './auth/auth.module';
     TypeOrmModule.forRoot(databaseConfig),
     UsersModule,
     AuthModule,
+    DocumentsModule,
+    SignatureRequestsModule,
+    MailModule,
   ],
   controllers: [AppController],
   providers: [AppService],
