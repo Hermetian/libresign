@@ -3,8 +3,12 @@
 import { useState, useRef, useEffect } from 'react';
 import SignatureCanvas from 'react-signature-canvas';
 import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
-export default function SignDocumentPage({ params }: { params: { id: string } }) {
+type Params = Promise<{ id: string }>;
+
+export default function SignDocumentPage(props: { params: Params }) {
+  const params = use(props.params);
   const requestId = params.id;
   const router = useRouter();
   const [documentUrl, setDocumentUrl] = useState<string | null>(null);

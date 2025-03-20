@@ -2,14 +2,26 @@
   "name": "libresign",
   "version": "0.1.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "start": "concurrently \"npm run start:server\" \"npm run start:client\" --names \"server,client\" --prefix-colors \"blue,green\"",
+    "start:client": "npm run start --workspace=client",
+    "start:server": "npm run start --workspace=server",
+    "dev": "concurrently \"npm run dev --workspace=server\" \"npm run dev --workspace=client\" --names \"server,client\" --prefix-colors \"blue,green\"",
+    "build": "npm run build --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
   "private": true,
-  "dependencies": {},
+  "dependencies": {
+    "next": "^15.2.3"
+  },
   "devDependencies": {
     "@nx/js": "20.5.0",
+    "concurrently": "^8.2.2",
     "nx": "20.5.0"
   },
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "client",
+    "server"
   ]
 }

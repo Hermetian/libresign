@@ -2,13 +2,17 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
 interface SignerInput {
   email: string;
   name: string;
 }
 
-export default function RequestSignaturesPage({ params }: { params: { id: string } }) {
+type Params = Promise<{ id: string }>;
+
+export default function RequestSignaturesPage(props: { params: Params }) {
+  const params = use(props.params);
   const documentId = params.id;
   const router = useRouter();
   const [signers, setSigners] = useState<SignerInput[]>([{ email: '', name: '' }]);

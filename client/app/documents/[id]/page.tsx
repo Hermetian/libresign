@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { use } from 'react';
 
 interface Signature {
   id: string;
@@ -21,7 +22,10 @@ interface Document {
   signatures: Signature[];
 }
 
-export default function DocumentDetailsPage({ params }: { params: { id: string } }) {
+type Params = Promise<{ id: string }>;
+
+export default function DocumentDetailsPage(props: { params: Params }) {
+  const params = use(props.params);
   const documentId = params.id;
   const router = useRouter();
   const [document, setDocument] = useState<Document | null>(null);
