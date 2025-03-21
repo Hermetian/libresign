@@ -35,23 +35,43 @@ class ApiService {
       return response.data;
     } catch (error) {
       // Handle errors, possibly transform them
-      if (axios.isAxiosError(error) && error.response) {
-        const statusCode = error.response.status;
+      if (axios.isAxiosError(error)) {
+        console.error('Axios error details:', {
+          message: error.message,
+          code: error.code,
+          config: error.config,
+          response: error.response ? {
+            status: error.response.status,
+            data: error.response.data,
+          } : 'No response',
+        });
         
-        // Handle authentication errors
-        if (statusCode === 401) {
-          // Clear token and redirect to login
-          localStorage.removeItem('token');
-          window.location.href = '/login';
+        if (error.response) {
+          const statusCode = error.response.status;
+          
+          // Handle authentication errors
+          if (statusCode === 401) {
+            // Clear token and redirect to login
+            localStorage.removeItem('token');
+            window.location.href = '/login';
+          }
+          
+          throw {
+            status: statusCode,
+            message: error.response.data.message || 'An error occurred',
+            errors: error.response.data.errors,
+          };
+        } else if (error.request) {
+          // The request was made but no response was received
+          throw {
+            status: 0,
+            message: 'Network error: No response from server. Please check if the server is running.',
+            error: error.message,
+          };
         }
-        
-        throw {
-          status: statusCode,
-          message: error.response.data.message || 'An error occurred',
-          errors: error.response.data.errors,
-        };
       }
       
+      // For non-Axios errors
       throw error;
     }
   }
@@ -109,7 +129,7 @@ class ApiService {
 }
 
 // Create and export API instance
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
 export const api = new ApiService({
   baseURL: API_URL,
   timeout: 30000, // 30 seconds

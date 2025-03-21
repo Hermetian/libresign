@@ -35,6 +35,10 @@ export default function RegisterPage() {
     setError(null);
     
     try {
+      console.log('Attempting to register with:', { name, email });
+      
+      // Use the local Next.js API route with improved error handling
+      console.log('Sending request to /api/auth/register');
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -47,18 +51,25 @@ export default function RegisterPage() {
         }),
       });
       
+      console.log('Registration response status:', response.status);
+      
+      const responseData = await response.json();
+      console.log('Registration response data:', responseData);
+      
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(responseData.message || 'Registration failed');
       }
       
       // Redirect to the login page after successful registration
       router.push('/login?registered=true');
     } catch (error) {
+      console.error('Registration error (detailed):', error);
       if (error instanceof Error) {
-        setError(error.message);
+        setError(`Error: ${error.message}`);
+      } else if (typeof error === 'object' && error !== null && 'message' in error) {
+        setError(error.message as string);
       } else {
-        setError('An unexpected error occurred');
+        setError('An error occurred during registration. Check browser console for details.');
       }
     } finally {
       setIsSubmitting(false);
