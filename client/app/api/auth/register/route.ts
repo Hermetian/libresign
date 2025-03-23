@@ -5,7 +5,7 @@ export async function POST(request: Request) {
     const body = await request.json();
     console.log('Registration request received by Next.js API route:', body);
 
-    // Forward to backend server - update port to 3001 where NestJS is running
+    // Forward to backend server
     const backendUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
     console.log(`Attempting to connect to backend at: ${backendUrl}/auth/register`);
     
@@ -16,8 +16,6 @@ export async function POST(request: Request) {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(body),
-        // Add timeout to prevent hanging requests
-        signal: AbortSignal.timeout(8000)
       });
 
       console.log('Response status:', response.status);

@@ -13,6 +13,7 @@ out-tsc/
 # Environment variables
 .env
 .env.local
+.env.*.local
 
 # OS and IDE files
 .DS_Store
@@ -45,3 +46,16 @@ devplan.md
 # Nx specific
 .nx/cache
 .nx/workspace-data
+
+# AWS specific
+*.pem
+libresign-backend-key.pem
+aws-hosting-info.md
+AdminWithBudget_accessKeys.csv
+AdminWithBudget_credentials.csv
+.aws/
+aws-exports.js
+budget.json
+notifications.json
+setup-ec2.sh
+upload-to-ec2.sh
