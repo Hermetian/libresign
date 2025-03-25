@@ -15,7 +15,10 @@ frontend:
     baseDirectory: client
     files:
       - .next/**/*
+      - node_modules/**/*
+      - public/**/*
       - package.json
+      - next.config.js
     discard-paths: no
   cache:
     paths:
@@ -28,4 +31,5 @@ frontend:
           value: 'public, max-age=0, must-revalidate'
   buildConfig:
     appBuild: true
-    distDir: .next
+    framework: Next.js
+    outputDir: null
