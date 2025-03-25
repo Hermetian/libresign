@@ -11,8 +11,18 @@ frontend:
   artifacts:
     baseDirectory: client
     files:
-      - '**/*'
+      - .next/**/*
+      - package.json
+    discard-paths: no
   cache:
     paths:
       - node_modules/**/*
       - client/node_modules/**/*
+  customHeaders:
+    - pattern: '**/*'
+      headers:
+        - key: 'Cache-Control'
+          value: 'public, max-age=0, must-revalidate'
+  buildConfig:
+    appBuild: true
+    distDir: .next

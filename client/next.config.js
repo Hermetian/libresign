@@ -7,7 +7,7 @@ const nextConfig = {
   eslint: {
     // Also ignore ESLint errors
     ignoreDuringBuilds: true,
-  },
+  }
 }
 
 module.exports = nextConfig 
